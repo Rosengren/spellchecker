@@ -45,13 +45,11 @@ class Spellchecker
   #generate all correction candidates at an edit distance of 1 from the input word.
   def edits1(word)
 
-    i = 1
-    len = word.length
-
     deletes = []
     #all strings obtained by deleting a letter (each letter)
-    while i < len do
-      deletes.push(word[0..i-1] + word[i+1..-1])
+    i = 0
+    while i < word.length do
+      deletes.push(word[0...i] + word[i+1..-1])
       i+= 1
     end
 
@@ -78,11 +76,10 @@ class Spellchecker
 
     replaces = []
     #all strings obtained by replacing letters (all possible letters in all possible positions)
-    i = 1
-    len = word.length
-    while i < len do
+    i = 0
+    while i < word.length do
         ALPHABET.split("").each do |letter|
-            replaces.push(word[0..i-1] + letter + word[i+1..-1])
+            replaces.push(word[0...i] + letter + word[i+1..-1])
         end
         i+= 1
     end
@@ -94,13 +91,18 @@ class Spellchecker
   # find known (in dictionary) distance-2 edits of target word.
   def known_edits2 (word)
     # get every possible distance - 2 edit of the input word. Return those that are in the dictionary.
+    bigArray = []
+    edits = edits1(word)
+    edits.each do |wurd|
+        bigArray += edits1(wurd)
+    end
+    known(bigArray.uniq)
   end
 
   #return subset of the input words (argument is an array) that are known by this dictionary
   def known(words)
-    return words.find_all {true } #find all words for which condition is true,
+    return words.find_all {|word| dictionary.key?(word) } #find all words for which condition is true,
                                     #you need to figure out this condition
-
   end
 
 
@@ -112,6 +114,18 @@ class Spellchecker
   # returns distance-2 replacements sorted by descending frequency in the model
   # else returns nil
   def correct(word)
+    if dictionary.key?(word)
+        return [word]
+    end
+    distance1 = known(edits1(word))
+    if distance1.any?
+        return distance1.sort_by {|value| @dictionary[value]}.reverse
+    end
+    distance2 = known_edits2(word)
+    if distance2.any?
+        return distance2.sort_by {|value| @dictionary[value]}.reverse
+    end
+    return nil
   end
 
 
